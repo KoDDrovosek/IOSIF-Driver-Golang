@@ -13,7 +13,7 @@ type Connector interface {
 	Pull(topicId string) (key string, value string, err error)
 	Subscribe(topic string, handler func(key, value string))
 	BulkSubscribe(topics map[string]func(key, value string))
-	Publish(key, value string) error
+	Publish(topic, key, value string) error
 	Start() error
 }
 
@@ -42,13 +42,21 @@ func (c *connector) Subscribe(topic string, handler func(key, value string)) {
 	c.topics[topic] = handler
 }
 
-func (c connector) Publish(key, value string) error {
+func (c connector) Publish(topicId, key, value string) error {
 
 	payload := fmt.Sprintf("{\"key\":\"%s\", \"value\": \"%s\"}", key, value)
-	response, err := http.Post(c.url, "application/json", bytes.NewBuffer([]byte(payload)))
+	request, err := http.NewRequest(http.MethodPost, c.url, bytes.NewBuffer([]byte(payload)))
 	if err != nil {
 		return err
 	}
+
+	q := request.URL.Query()
+	q.Set("topicId", topicId)
+	request.URL.RawQuery = q.Encode()
+
+	client := http.Client{}
+
+	response, err := client.Do(request)
 
 	if response.StatusCode != http.StatusCreated {
 		return errors.New(fmt.Sprintf("server response with status code %d", response.StatusCode))
