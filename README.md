@@ -10,12 +10,13 @@ go get github.com/SoGoDev/IOSIF-Driver-Golang
 ```go
 import (
 	driver "github.com/SoGoDev/IOSIF-Driver-Golang"
+    "fmt"
 	"log"
 )
 
 
 func TestHandler(key, value string) {
-
+    fmt.Println(key, value)
 }
 
 func main () {
