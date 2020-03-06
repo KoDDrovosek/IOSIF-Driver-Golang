@@ -1,5 +1,9 @@
 # IOSIF golang driver 
 
+```
+go get "github.com/SoGoDev/IOSIF-Driver-Golang
+```
+
 
 #### Tutorial
 
