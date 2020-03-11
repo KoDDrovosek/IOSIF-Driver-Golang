@@ -23,9 +23,9 @@ type message struct {
 }
 
 type Options struct {
-	topics  map[string]func(key, value string)
-	url     string
-	periods int64
+	Topics  map[string]func(key, value string)
+	URL     string
+	Periods int64
 }
 
 type connector struct {
@@ -35,17 +35,17 @@ type connector struct {
 }
 
 func (c *connector) BulkSubscribe(topics map[string]func(key, value string)) {
-	c.topics = topics
+	c.Topics = topics
 }
 
 func (c *connector) Subscribe(topic string, handler func(key, value string)) {
-	c.topics[topic] = handler
+	c.Topics[topic] = handler
 }
 
 func (c connector) Publish(topicId, key, value string) error {
 
 	payload := fmt.Sprintf("{\"key\":\"%s\", \"value\": \"%s\"}", key, value)
-	request, err := http.NewRequest(http.MethodPost, c.url, bytes.NewBuffer([]byte(payload)))
+	request, err := http.NewRequest(http.MethodPost, c.URL, bytes.NewBuffer([]byte(payload)))
 	if err != nil {
 		return err
 	}
@@ -66,7 +66,7 @@ func (c connector) Publish(topicId, key, value string) error {
 }
 
 func (c connector) Pull(topicId string) (key string, value string, err error) {
-	req, err := http.NewRequest(http.MethodGet, c.url, nil)
+	req, err := http.NewRequest(http.MethodGet, c.URL, nil)
 	if err != nil {
 		return "", "", err
 	}
@@ -96,7 +96,7 @@ func (c connector) Start() error {
 func (c connector) listener() {
 
 	for {
-		for topic, handler := range c.topics {
+		for topic, handler := range c.Topics {
 			key, value, err := c.Pull(topic)
 			if err != nil {
 				continue
@@ -105,7 +105,7 @@ func (c connector) listener() {
 			handler(key, value)
 		}
 
-		time.Sleep(time.Duration(c.periods))
+		time.Sleep(time.Duration(c.Periods))
 	}
 }
 

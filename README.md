@@ -23,11 +23,11 @@ func main () {
 
 
 	opt := driver.Options{
-		topics: map[string]func(key string, value string){
+		Topics: map[string]func(key string, value string){
 			"test": TestHandler,
 		},
-		url:     "http://localhost:7070",
-		periods: 30,
+		Url:     "http://localhost:7070",
+		Periods: 30,
 	}
 
 	d := driver.New(opt)
