@@ -73,7 +73,7 @@ func (c connector) Pull(topicId string) (key string, value string, err error) {
 
 	q := req.URL.Query()
 	q.Set("topicId", topicId)
-	q.Set("subscriberId", connector.subscriberId)
+	q.Set("subscriberId", c.subscriberId)
 	req.URL.RawQuery = q.Encode()
 
 	client := http.Client{}
