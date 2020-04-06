@@ -45,7 +45,7 @@ func (c *connector) Subscribe(topic string, handler func(key, value string)) {
 func (c connector) Publish(topicId, key, value string) error {
 
 	payload := fmt.Sprintf("{\"key\":\"%s\", \"value\": \"%s\"}", key, value)
-	request, err := http.NewRequest(http.MethodPost, c.URL, bytes.NewBuffer([]byte(payload)))
+	request, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/publish", c.URL), bytes.NewBuffer([]byte(payload)))
 	if err != nil {
 		return err
 	}
@@ -66,13 +66,14 @@ func (c connector) Publish(topicId, key, value string) error {
 }
 
 func (c connector) Pull(topicId string) (key string, value string, err error) {
-	req, err := http.NewRequest(http.MethodGet, c.URL, nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/pull"c.URL), nil)
 	if err != nil {
 		return "", "", err
 	}
 
 	q := req.URL.Query()
 	q.Set("topicId", topicId)
+	q.Set("subscriberId", connector.subscriberId)
 	req.URL.RawQuery = q.Encode()
 
 	client := http.Client{}
