@@ -84,7 +84,7 @@ func (c connector) Pull(topicId string) (key string, value string, err error) {
 }
 
 func (c connector) Start() error {
-	if !c.isListenerUp {
+	if c.isListenerUp {
 		return errors.New("listener is already up")
 	}
 
