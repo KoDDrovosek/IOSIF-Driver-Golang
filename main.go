@@ -66,7 +66,7 @@ func (c connector) Publish(topicId, key, value string) error {
 }
 
 func (c connector) Pull(topicId string) (key string, value string, err error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/pull"c.URL), nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/pull", c.URL), nil)
 	if err != nil {
 		return "", "", err
 	}
