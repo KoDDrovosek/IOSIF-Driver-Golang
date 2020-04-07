@@ -44,7 +44,7 @@ func (c *connector) Subscribe(topic string, handler func(key, value string)) {
 
 func (c connector) Publish(topicId, key, value string) error {
 
-	payload := fmt.Sprintf("{\"key\":\"%s\", \"value\": \"%s\"}", key, value)
+	payload := fmt.Sprintf("{\"key\":\"%s\", \"value\": %s}", key, value)
 	request, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/publish", c.URL), bytes.NewBuffer([]byte(payload)))
 	if err != nil {
 		return err
