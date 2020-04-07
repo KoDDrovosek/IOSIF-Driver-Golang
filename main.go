@@ -10,22 +10,26 @@ import (
 )
 
 type Connector interface {
-	Pull(topicId string) (key string, value string, err error)
-	Subscribe(topic string, handler func(key, value string))
-	BulkSubscribe(topics map[string]func(key, value string))
+	Pull(topicId string) (key string, value json.RawMessage, err error)
+	Subscribe(topic string, handler func(key string, value json.RawMessage)) error
+	BulkSubscribe(topics map[string]func(key string, value json.RawMessage))
 	Publish(topic, key, value string) error
 	Start() error
 }
 
 type message struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
+	Key   string          `json:"key"`
+	Value json.RawMessage `json:"value"`
 }
 
 type Options struct {
-	Topics  map[string]func(key, value string)
+	Topics  map[string]func(key string, value json.RawMessage)
 	URL     string
 	Periods int64
+}
+
+type SubscribtionResponse struct {
+	Token string `json:"token"`
 }
 
 type connector struct {
@@ -34,12 +38,20 @@ type connector struct {
 	Options
 }
 
-func (c *connector) BulkSubscribe(topics map[string]func(key, value string)) {
+func (c *connector) BulkSubscribe(topics map[string]func(key string, value json.RawMessage)) {
 	c.Topics = topics
 }
 
-func (c *connector) Subscribe(topic string, handler func(key, value string)) {
+func (c *connector) Subscribe(topic string, handler func(key string, value json.RawMessage)) error {
+	response, err := http.Post(fmt.Sprintf("%s/subscribe", c.URL), "application/json", bytes.NewBufferString(fmt.Sprintf("[\"%s\"]", topic)))
+	if err != nil || response.StatusCode != http.StatusCreated {
+		return err
+	}
+	var marshaledResponse SubscribtionResponse
+	json.NewDecoder(response.Body).Decode(&marshaledResponse)
+	c.subscriberId = marshaledResponse.Token
 	c.Topics[topic] = handler
+	return nil
 }
 
 func (c connector) Publish(topicId, key, value string) error {
@@ -65,10 +77,10 @@ func (c connector) Publish(topicId, key, value string) error {
 	return nil
 }
 
-func (c connector) Pull(topicId string) (key string, value string, err error) {
+func (c connector) Pull(topicId string) (key string, value json.RawMessage, err error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/pull", c.URL), nil)
 	if err != nil {
-		return "", "", err
+		return "", nil, err
 	}
 
 	q := req.URL.Query()
@@ -78,6 +90,9 @@ func (c connector) Pull(topicId string) (key string, value string, err error) {
 
 	client := http.Client{}
 	res, err := client.Do(req)
+	if err != nil || res.StatusCode != http.StatusOK {
+		return "", nil, errors.New("No messages")
+	}
 
 	var m message
 	err = json.NewDecoder(res.Body).Decode(&m)
@@ -94,8 +109,7 @@ func (c connector) Start() error {
 	return nil
 }
 
-func (c connector) listener() {
-
+func (c *connector) listener() {
 	for {
 		for topic, handler := range c.Topics {
 			key, value, err := c.Pull(topic)
